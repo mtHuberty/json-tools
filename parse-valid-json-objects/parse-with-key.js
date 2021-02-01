@@ -10,7 +10,7 @@ let filterObj
 try {
   filterObj = JSON.parse(filterJSON)
 } catch(e) {
-  console.log("second arg to script must be valid JSON object with single key/value pair...exiting...")
+  console.error("second arg to script must be valid JSON object with single key/value pair...exiting...")
   process.exit(1)
 }
 
@@ -31,7 +31,6 @@ const filePath = path.join(__dirname, inputPath);
 const text = fs.readFileSync(filePath, 'utf-8')
 
 function findJSONObjects(text) {
-  console.log('hey')
 
   let result = findNextObject(text, 0)
 
@@ -41,7 +40,6 @@ function findJSONObjects(text) {
   let loopProtectionLimit = 1000
 
   while (result  && loopProtectionCount < loopProtectionLimit) {
-    console.log(loopProtectionCount)
     loopProtectionCount++
     objects.push(result.obj)
     // await waitASec()
@@ -63,7 +61,6 @@ function waitASec() {
 
 // Return the next object, and the ending index for that object
 function findNextObject(substr, startIndex) {
-  console.log('ho')
 
   let count = 0
   let found = false
@@ -75,13 +72,15 @@ function findNextObject(substr, startIndex) {
     // If we found an object, and got back down to 0, we found the full thing. Snip it out and mark the end spot.
     if (found && count == 0) {
       jsonEnd = i
-      const searchableObj = text.substring(jsonStart, jsonEnd)
+      
+      const searchableObjStr = text.substring(jsonStart, jsonEnd)
+      const searchableObj = JSON.parse(searchableObjStr)
 
       if (matchesFilterRecursive(filterObj, searchableObj)) {
         if (prettyPrint) {
-          console.log(JSON.parse(searchableObj))
-        } else {
           console.log(searchableObj)
+        } else {
+          console.log(searchableObjStr)
         } 
       }
 
@@ -124,8 +123,8 @@ function matchesFilterRecursive(filterObj, searchableObj) {
   // expect filterObj to only have 1 key
   const keys = Object.keys(filterObj)
   if (keys.length != 1) {
-    console.log(`filterObj doesn't have 1 key: ${filterObj}`)
-    console.log('exiting...')
+    console.error(`filterObj doesn't have 1 key: ${filterObj}`)
+    console.error('exiting...')
     process.exit(1)
   }
 
@@ -146,11 +145,13 @@ function matchesFilterRecursive(filterObj, searchableObj) {
     return false
   }
 
+
   // if we found a matching key, is the filter key a primitive?
   if (typeof filterObj[key] === 'object') {
     // gotta go deeper
     return matchesFilterRecursive(filterObj[key], searchableObj[key])
   }
+
 
   if (filterObj[key] == searchableObj[key]) {
     return true
